@@ -4,5 +4,8 @@
             "config"
         ],
         "directories": []
-    }
+    },
+    "languages": [
+        "en_US", "de_DE"
+    ]
 }

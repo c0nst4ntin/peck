@@ -37,16 +37,7 @@ class DefaultCommand extends Command
         $output->writeln('');
 
         if ($issues === []) {
-            renderUsing($output);
-            render(<<<'HTML'
-                <div class="mx-2 mb-1">
-                    <div class="space-x-1">
-                        <span class="bg-green text-white px-1 font-bold">PASS</span>
-                        <span>No misspellings found in your project.</span>
-                    </div>
-                </div>
-                HTML
-            );
+            $this->renderSuccess($output);
 
             return Command::SUCCESS;
         }
@@ -64,6 +55,22 @@ class DefaultCommand extends Command
     protected function configure(): void
     {
         $this->setDescription('Checks for misspellings in the given directory.');
+    }
+
+    protected function renderSuccess(OutputInterface $output): void
+    {
+        renderUsing($output);
+
+        render(
+            <<<'HTML'
+                <div class="mx-2 mb-1">
+                    <div class="space-x-1">
+                        <span class="bg-green text-white px-1 font-bold">PASS</span>
+                        <span>No misspellings found in your project.</span>
+                    </div>
+                </div>
+                HTML
+        );
     }
 
     protected function renderIssue(OutputInterface $output, Issue $issue, string $currentDirectory): void

@@ -9,6 +9,7 @@ use Peck\Contracts\Services\Spellchecker;
 use Peck\ValueObjects\Misspelling;
 use PhpSpellcheck\MisspellingInterface;
 use PhpSpellcheck\Spellchecker\Aspell;
+use Throwable;
 
 final readonly class InMemorySpellchecker implements Spellchecker
 {
@@ -40,7 +41,39 @@ final readonly class InMemorySpellchecker implements Spellchecker
      */
     public function check(string $text): array
     {
-        $misspellings = $this->filterWhitelistedWords(iterator_to_array($this->aspell->check($text)));
+        $allMisspellings = [];
+
+        foreach ($this->config->languages as $language) {
+            $allMisspellings[$language] = [
+                ...$allMisspellings[$language] ?? [],
+                ...$this->filterWhitelistedWords(iterator_to_array(
+                    $this->aspell->check($text, [$language])
+                ))
+            ];
+        }
+
+        $result = [];
+
+        // Keep only misspellings that are in all languages.
+        foreach ($allMisspellings as $language => $misspellings) {
+            foreach ($misspellings as $misspelling) {
+                foreach ($this->config->languages as $languageToCheck) {
+                    $foundForCurrentLanguage = current(array_filter($misspellings[$languageToCheck] ?? [], function (MisspellingInterface $compare) use ($misspelling): bool {
+                        return $compare->getWord() === $misspelling->getWord() && $compare->getLineNumber() === $misspelling->getLineNumber();
+                    }));
+
+                    if ($foundForCurrentLanguage === false) {
+                        $alreadyExists = current(array_filter($result, function (MisspellingInterface $compare) use ($misspelling): bool {
+                            return $compare->getWord() === $misspelling->getWord() && $compare->getLineNumber() === $misspelling->getLineNumber();
+                        }));
+
+                        if ($alreadyExists === false) {
+                            $result[] = $misspelling;
+                        }
+                    }
+                }
+            }
+        }
 
         return array_map(fn (MisspellingInterface $misspelling): Misspelling => new Misspelling(
             $misspelling->getWord(),

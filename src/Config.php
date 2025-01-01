@@ -18,10 +18,12 @@ final class Config
      *
      * @param  array<int, string>  $whitelistedWords
      * @param  array<int, string>  $whitelistedDirectories
+     * @param  array<int, string>  $languages
      */
     public function __construct(
         public array $whitelistedWords = [],
         public array $whitelistedDirectories = [],
+        public array $languages = [],
     ) {
         $this->whitelistedWords = array_map(fn (string $word): string => strtolower($word), $whitelistedWords);
     }
@@ -43,13 +45,15 @@ final class Config
          *     ignore?: array{
          *         words?: array<int, string>,
          *         directories?: array<int, string>
-         *     }
+         *     },
+         *     languages?: array<int, string>
          *  } $jsonAsArray */
         $jsonAsArray = json_decode($contents, true) ?: [];
 
         return self::$instance = new self(
             $jsonAsArray['ignore']['words'] ?? [],
             $jsonAsArray['ignore']['directories'] ?? [],
+            $jsonAsArray['languages'] ?? ['en_US'],
         );
     }
 }
